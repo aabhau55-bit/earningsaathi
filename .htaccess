@@ -1,0 +1,17 @@
+# PrizeUp (Earning Saathi) — referral links + Android App Links (Hostinger / Apache / LiteSpeed)
+
+RewriteEngine On
+
+# Pretty referral links: /prizeup/<code> is served by /prizeup/index.html
+# (and legacy /i/<code> by /i/index.html). INTERNAL rewrites — the browser URL
+# keeps the code so the page's JS can read it. (Don't redirect, or we'd lose it.)
+RewriteRule ^prizeup/[A-Za-z0-9]+/?$ /prizeup/index.html [L]
+RewriteRule ^i/[A-Za-z0-9]+/?$ /i/index.html [L]
+
+# Android App Links require assetlinks.json to be served as JSON over HTTPS.
+<Files "assetlinks.json">
+  ForceType application/json
+</Files>
+
+# Make sure the .well-known folder is reachable (some hosts block dotfolders).
+RewriteRule ^\.well-known/ - [L]

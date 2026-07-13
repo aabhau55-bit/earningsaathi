@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/prizeup/:code", "destination": "/prizeup/index.html" },
+    { "source": "/i/:code", "destination": "/i/index.html" }
+  ]
+}

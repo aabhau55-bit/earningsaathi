@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.earningsaathi.prizeup",
+      "sha256_cert_fingerprints": [
+        "69:BA:F8:AC:0C:A0:BF:05:2F:F7:C3:21:8C:10:35:66:68:2F:B9:E7:F0:E3:1D:54:F1:C3:99:BD:4C:6B:75:CD",
+        "94:3F:97:BF:D9:7C:1D:07:AF:4E:1F:9A:DA:C3:91:EA:63:5E:7E:AA:4D:9F:9F:3D:AC:41:F7:7F:CB:81:AA:AD"
+      ]
+    }
+  }
+]
