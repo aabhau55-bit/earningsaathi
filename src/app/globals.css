@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+/* ============================================================================
+   Design tokens — SaathiGames dashboard.
+   Retinted to match the Earning Saathi brand (earningsaathi.com — deep emerald
+   glassmorphism, dark-only; the marketing site has no light mode, so neither
+   does this). Categorical series colors are UNCHANGED — they're the validated
+   CVD-safe data-viz palette (the dark-band steps, since dark is now the only
+   band); only surfaces/ink/accents/shadows follow the brand. Colors are
+   declared directly in @theme (not @theme inline) so Tailwind v4 generates
+   real color utilities with working opacity modifiers, e.g. bg-series-1/15.
+   ============================================================================ */
+@theme {
+  /* surfaces & ink — deep emerald glass */
+  --color-page: #04100b;
+  --color-surface: rgba(255, 255, 255, 0.055);
+  --color-surface-2: rgba(255, 255, 255, 0.09);
+  --color-ink: #ffffff;
+  --color-ink-2: #e6f1ec;
+  --color-muted: #a7c0b6;
+  --color-hairline: rgba(255, 255, 255, 0.12);
+  --color-gridline: rgba(255, 255, 255, 0.1);
+  --color-baseline: rgba(255, 255, 255, 0.28);
+  --color-success: #22c55e;
+
+  /* categorical series (fixed order — assign by entity, never cycle) */
+  --color-series-1: #3987e5; /* blue   */
+  --color-series-2: #199e70; /* aqua   */
+  --color-series-3: #c98500; /* yellow */
+  --color-series-4: #22c55e; /* green  */
+  --color-series-5: #9085e9; /* violet */
+  --color-series-6: #e66767; /* red    */
+  --color-series-7: #d55181; /* magenta*/
+  --color-series-8: #d95926; /* orange */
+
+  /* status (reserved — never a series; always paired with icon+label) */
+  --color-good: #22c55e;
+  --color-warning: #facc15;
+  --color-serious: #ec835a;
+  --color-critical: #e5484d;
+
+  /* Shadow utilities (shadow-sm/md/xl) — override so every existing usage
+     across Card/StatCard/drawers picks up the glass depth for free. */
+  --shadow-sm: 0 18px 50px -18px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  --shadow-md: 0 22px 60px -18px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --shadow-xl: 0 26px 70px -20px rgba(34, 197, 94, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: var(--font-geist-mono);
+}
+
+/* Expose the token names the chart theme references via var(). */
+:root {
+  --ink: var(--color-ink);
+  --ink-2: var(--color-ink-2);
+  --muted: var(--color-muted);
+  --gridline: var(--color-gridline);
+  --baseline: var(--color-baseline);
+  --surface: var(--color-surface);
+  --hairline: var(--color-hairline);
+  --series-1: var(--color-series-1);
+  --series-2: var(--color-series-2);
+  --series-3: var(--color-series-3);
+  --series-4: var(--color-series-4);
+  --series-5: var(--color-series-5);
+  --series-6: var(--color-series-6);
+  --series-7: var(--color-series-7);
+  --series-8: var(--color-series-8);
+
+  /* Brand glass tokens — used by Card/Button for the frosted look. */
+  --glass-blur: blur(20px) saturate(135%);
+}
+
+body {
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  position: relative;
+}
+
+/* Ambient background orbs — same treatment as earningsaathi.com, so the glass
+   panels have real color to refract. Fixed behind everything, no pointer
+   events, so it never interferes with the UI underneath. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(620px 620px at -5% -10%, rgba(22, 163, 74, 0.35), transparent 70%),
+    radial-gradient(540px 540px at 105% 15%, rgba(13, 148, 136, 0.28), transparent 70%),
+    radial-gradient(120% 90% at 50% -10%, rgba(34, 197, 94, 0.12), transparent 55%);
+}
