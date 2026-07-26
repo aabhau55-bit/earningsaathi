@@ -11,6 +11,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Earning Saathi Dashboard",
   description: "Admin control panel for the Earning Saathi PrizeUp app.",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
