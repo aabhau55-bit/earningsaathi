@@ -48,13 +48,13 @@ export function CreatorStatsView({ code }: { code: string }) {
   }
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-page px-4 py-12">
-      <Card className="w-full max-w-xl p-6 sm:p-8">
+    <main className="flex min-h-dvh items-center justify-center bg-page px-3 py-8 sm:px-4 sm:py-12">
+      <Card className="w-full max-w-xl p-5 sm:p-8">
         <div className="mb-6 text-center">
           <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[linear-gradient(100deg,#22c55e,#15803d)] text-white shadow-sm">
             <Gamepad2 className="h-5 w-5" />
           </div>
-          <h1 className="text-xl font-semibold tracking-tight text-ink sm:text-2xl">
+          <h1 className="text-lg font-semibold tracking-tight text-ink sm:text-2xl">
             Your Referral Stats
           </h1>
           <p className="mt-1 text-sm text-muted">
@@ -84,11 +84,11 @@ export function CreatorStatsView({ code }: { code: string }) {
           </form>
         ) : (
           <div className="space-y-4">
-            <div className="rounded-2xl border border-hairline bg-surface-2 p-6 text-center">
+            <div className="rounded-2xl border border-hairline bg-surface-2 px-4 py-6 text-center sm:p-6">
               <div className="text-xs font-medium uppercase tracking-wide text-muted">
                 Lifetime referrals
               </div>
-              <div className="mt-2 text-5xl font-bold tracking-tight text-ink">
+              <div className="mt-2 break-words text-4xl font-bold tracking-tight text-ink sm:text-5xl">
                 {num(result.lifetime)}
               </div>
               <p className="mt-1 text-sm text-muted">
@@ -96,12 +96,20 @@ export function CreatorStatsView({ code }: { code: string }) {
               </p>
             </div>
 
-            <div className="grid grid-cols-4 gap-2 sm:gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
               <MiniStat label="Last hour" value={result.lastHour} />
               <MiniStat label="Last 24h" value={result.lastDay} />
               <MiniStat label="Last 7d" value={result.lastWeek} />
               <MiniStat label="Last 30d" value={result.lastMonth} />
             </div>
+
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
+              <MiniStat label="D1" value={result.d1} />
+              <MiniStat label="D7" value={result.d7} />
+            </div>
+            <p className="text-center text-xs text-muted">
+              D1 = came back 2h+ after joining · D7 = still active 7d+ after joining
+            </p>
           </div>
         )}
       </Card>

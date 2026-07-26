@@ -18,6 +18,8 @@ export type CreateCampaignResult =
     }
   | { ok: false; error: string };
 
+export type UpdatePercentageResult = { ok: true } | { ok: false; error: string };
+
 function generatePassword(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
   const arr = new Uint32Array(16);
@@ -112,4 +114,32 @@ export async function createCampaignAction(input: {
     newlyCreated: accountJustCreated && !alreadyTracked,
     password: accountJustCreated ? password : undefined,
   };
+}
+
+// Controls what % of the real referral count the creator sees on their
+// public /creator/[code] page — the real count everywhere internal (this
+// dashboard) is never affected. RLS (creator_campaigns_update) restricts an
+// admin to their own campaigns; super_admin can update any.
+export async function updateDisplayPercentageAction(
+  campaignId: string,
+  percentage: number,
+): Promise<UpdatePercentageResult> {
+  const guard = await requirePlatformUser();
+  if (!guard.ok) return guard;
+
+  if (!Number.isInteger(percentage) || percentage < 1 || percentage > 500) {
+    return { ok: false, error: "Percentage must be a whole number between 1 and 500" };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("creator_campaigns")
+    .update({ display_percentage: percentage })
+    .eq("id", campaignId);
+
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/admin");
+  revalidatePath("/super/admins");
+  return { ok: true };
 }

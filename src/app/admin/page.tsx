@@ -7,6 +7,7 @@ import { DataTable, type Column } from "@/components/ui/data-table";
 import { CopyButton } from "@/components/ui/copy-button";
 import { referralUrl, creatorStatsUrl } from "@/lib/urls";
 import { CreateCampaignForm } from "@/components/create-campaign-form";
+import { CampaignPercentageCell } from "@/components/campaign-percentage-cell";
 
 type CampaignRow = {
   id: string;
@@ -14,6 +15,7 @@ type CampaignRow = {
   creator_email: string;
   campaign_name: string | null;
   created_at: string;
+  display_percentage: number;
 };
 type PrizeUpCreatorInfo = {
   id: string;
@@ -53,7 +55,7 @@ export default async function AdminHome() {
 
   const { data: campaignRows } = await supabase
     .from("creator_campaigns")
-    .select("id, prizeup_user_id, creator_email, campaign_name, created_at")
+    .select("id, prizeup_user_id, creator_email, campaign_name, created_at, display_percentage")
     .eq("admin_id", user!.id)
     .order("created_at", { ascending: false });
 
@@ -92,10 +94,22 @@ export default async function AdminHome() {
     },
     {
       key: "referred_count",
-      header: "Referred",
+      header: "Referred (real)",
       align: "right",
       numeric: true,
       render: (r) => num(prizeupInfo.get(r.prizeup_user_id)?.referred_count),
+    },
+    {
+      key: "display_percentage",
+      header: "Shown to creator",
+      render: (r) => (
+        <div className="flex items-center gap-2">
+          <CampaignPercentageCell campaignId={r.id} initialPercentage={r.display_percentage} />
+          <span className="text-xs text-muted">
+            = {num(Math.floor((Number(prizeupInfo.get(r.prizeup_user_id)?.referred_count ?? 0) * r.display_percentage) / 100))}
+          </span>
+        </div>
+      ),
     },
     {
       key: "stats_link",
