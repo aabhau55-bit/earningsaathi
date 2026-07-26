@@ -15,8 +15,11 @@ import { ROLE_HOME, areaForPath, canAccessArea, type Role } from "@/lib/roles";
 // "/" is the static marketing site (public/index.html, rewritten in via
 // vercel.json/next.config.ts) — it must never be forced through the login
 // redirect, signed in or not. /creator/<code> is a public, email-gated
-// stats page — creators never have a login session either.
-const PUBLIC_PATHS = ["/", "/login", "/auth", "/creator"];
+// stats page — creators never have a login session either. /i and /prizeup
+// are the real referral-redirect links (App Links / Play Store fallback) —
+// the entire acquisition funnel depends on these being reachable by anyone,
+// logged in or not.
+const PUBLIC_PATHS = ["/", "/login", "/auth", "/creator", "/i", "/prizeup"];
 
 function isPublic(pathname: string): boolean {
   return PUBLIC_PATHS.some(
@@ -99,8 +102,10 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Run on everything except Next internals and static assets.
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
-  ],
+  // Run on everything except Next internals and static asset requests. Any
+  // request for an actual file (a dot anywhere in the path — .css, .js,
+  // .txt, .json, .ico, .well-known/*, etc.) is excluded rather than
+  // enumerating extensions one at a time: real app routes never contain a
+  // dot, so this can't accidentally let an authenticated page slip through.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\..*$).*)"],
 };
