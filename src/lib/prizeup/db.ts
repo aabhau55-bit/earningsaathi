@@ -18,6 +18,12 @@ function getPool(): Pool {
       connectionString: getPrizeUpDatabaseUrl(),
       ssl: { rejectUnauthorized: false },
       max: 5,
+      // Release idle connections back to the (shared, finite) connection
+      // budget instead of pinning them for this serverless instance's whole
+      // lifetime, and fail fast rather than hang when the pooler is under
+      // pressure — callers should see an error quickly, not a stalled page.
+      idleTimeoutMillis: 10_000,
+      connectionTimeoutMillis: 10_000,
     });
   }
   return global.__prizeupPool;

@@ -45,10 +45,16 @@ export async function createCampaignAction(input: {
 
   const supabase = await createClient();
 
-  const existing = await prizeupQuery<{ id: string; referral_code: string | null }>(
-    `select p.id, p.referral_code from profiles p join auth.users u on u.id = p.id where lower(u.email) = $1`,
-    [email],
-  );
+  let existing: { id: string; referral_code: string | null }[];
+  try {
+    existing = await prizeupQuery<{ id: string; referral_code: string | null }>(
+      `select p.id, p.referral_code from profiles p join auth.users u on u.id = p.id where lower(u.email) = $1`,
+      [email],
+    );
+  } catch (err) {
+    console.error("createCampaignAction lookup failed:", err instanceof Error ? err.message : err);
+    return { ok: false, error: "Couldn't reach PrizeUp's database right now — please try again in a moment." };
+  }
 
   let prizeupUserId: string;
   let referralCode: string | null;
@@ -75,11 +81,19 @@ export async function createCampaignAction(input: {
     prizeupUserId = created.user.id;
     accountJustCreated = true;
 
-    const [profile] = await prizeupQuery<{ referral_code: string | null }>(
-      `select referral_code from profiles where id = $1`,
-      [prizeupUserId],
-    );
-    referralCode = profile?.referral_code ?? null;
+    try {
+      const [profile] = await prizeupQuery<{ referral_code: string | null }>(
+        `select referral_code from profiles where id = $1`,
+        [prizeupUserId],
+      );
+      referralCode = profile?.referral_code ?? null;
+    } catch (err) {
+      console.error("createCampaignAction referral_code lookup failed:", err instanceof Error ? err.message : err);
+      return {
+        ok: false,
+        error: "Account created, but couldn't confirm its referral code — check the Admins page in a moment.",
+      };
+    }
   }
 
   if (!referralCode) {
