@@ -8,6 +8,7 @@ import { CopyButton } from "@/components/ui/copy-button";
 import { referralUrl, creatorStatsUrl } from "@/lib/urls";
 import { CreateCampaignForm } from "@/components/create-campaign-form";
 import { CampaignPercentageCell } from "@/components/campaign-percentage-cell";
+import { CampaignActions, type CampaignStatus } from "@/components/campaign-actions";
 
 type AdminRow = {
   admin_id: string;
@@ -23,6 +24,7 @@ type CampaignBookkeepingRow = {
   campaign_name: string | null;
   created_at: string;
   display_percentage: number;
+  status: CampaignStatus;
 };
 type PrizeUpCreatorInfo = {
   id: string;
@@ -31,6 +33,11 @@ type PrizeUpCreatorInfo = {
 };
 
 const num = (n: unknown) => Number(n ?? 0).toLocaleString();
+const STATUS_TONE: Record<CampaignStatus, "good" | "blue" | "critical"> = {
+  active: "good",
+  paused: "blue",
+  deleted: "critical",
+};
 
 // Admins list is this platform's own bookkeeping (platform_users). Campaigns
 // are also bookkeeping (creator_campaigns, in this same DB) — but the
@@ -43,7 +50,7 @@ export default async function AdminsPage() {
     supabase.rpc("list_admins"),
     supabase
       .from("creator_campaigns")
-      .select("id, admin_id, prizeup_user_id, creator_email, campaign_name, created_at, display_percentage")
+      .select("id, admin_id, prizeup_user_id, creator_email, campaign_name, created_at, display_percentage, status")
       .order("created_at", { ascending: false }),
   ]);
 
@@ -138,6 +145,17 @@ export default async function AdminsPage() {
           "—"
         );
       },
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (r) => <Badge tone={STATUS_TONE[r.status]}>{r.status}</Badge>,
+    },
+    {
+      key: "actions",
+      header: "",
+      align: "right",
+      render: (r) => <CampaignActions campaignId={r.id} status={r.status} />,
     },
   ];
 

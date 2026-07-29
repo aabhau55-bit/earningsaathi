@@ -25,9 +25,13 @@ export type ManagedUser = {
 
 function genPassword() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
-  const arr = new Uint32Array(12);
-  crypto.getRandomValues(arr);
-  return Array.from(arr, (n) => chars[n % chars.length]).join("");
+  const bytes = new Uint32Array(12);
+  crypto.getRandomValues(bytes);
+  let password = "";
+  for (let i = 0; i < bytes.length; i++) {
+    password += chars[bytes[i] % chars.length];
+  }
+  return password;
 }
 
 const ROLES: Role[] = ["super_admin", "admin"];

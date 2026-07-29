@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createPrizeUpAdminClient } from "@/lib/supabase/prizeup-admin";
 import { prizeupQuery } from "@/lib/prizeup/db";
+import { getRawReferralStats } from "@/lib/prizeup/referral-stats";
 import { referralUrl } from "@/lib/urls";
 import { requirePlatformUser } from "@/lib/actions/guard";
 
@@ -19,12 +20,22 @@ export type CreateCampaignResult =
   | { ok: false; error: string };
 
 export type UpdatePercentageResult = { ok: true } | { ok: false; error: string };
+export type CampaignStatusResult = { ok: true } | { ok: false; error: string };
+
+function revalidateCampaigns() {
+  revalidatePath("/admin");
+  revalidatePath("/super/admins");
+}
 
 function generatePassword(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
-  const arr = new Uint32Array(16);
-  crypto.getRandomValues(arr);
-  return Array.from(arr, (n) => chars[n % chars.length]).join("");
+  const bytes = new Uint32Array(16);
+  crypto.getRandomValues(bytes);
+  let password = "";
+  for (let i = 0; i < bytes.length; i++) {
+    password += chars[bytes[i] % chars.length];
+  }
+  return password;
 }
 
 // Creates (or reuses) a real PrizeUp account for this email, so PrizeUp's own
@@ -117,8 +128,22 @@ export async function createCampaignAction(input: {
     return { ok: false, error: insertError.message };
   }
 
-  revalidatePath("/admin");
-  revalidatePath("/super/admins");
+  // Re-creating a campaign you'd previously paused or deleted reactivates it
+  // instead of leaving it stuck — RLS (creator_campaigns_update) means this
+  // silently affects zero rows if the existing row belongs to another admin,
+  // so it can't reactivate anyone else's campaign.
+  if (alreadyTracked) {
+    const { error: reactivateError } = await supabase
+      .from("creator_campaigns")
+      .update({ status: "active", frozen_stats: null })
+      .eq("prizeup_user_id", prizeupUserId)
+      .in("status", ["paused", "deleted"]);
+    if (reactivateError) {
+      console.error("createCampaignAction reactivate failed:", reactivateError.message);
+    }
+  }
+
+  revalidateCampaigns();
 
   return {
     ok: true,
@@ -153,7 +178,99 @@ export async function updateDisplayPercentageAction(
 
   if (error) return { ok: false, error: error.message };
 
-  revalidatePath("/admin");
-  revalidatePath("/super/admins");
+  revalidateCampaigns();
+  return { ok: true };
+}
+
+// Pauses a campaign: the creator's /creator/[code] page keeps working, but
+// shows a frozen snapshot of their real counts (taken right now) instead of
+// a live read, so the numbers stop moving. PrizeUp's own referral redirect
+// (/i/<code>) is a static page with no dependency on this table — it keeps
+// working regardless of status. RLS (creator_campaigns_select/_update)
+// restricts this to the caller's own campaigns; super_admin can pause any.
+export async function pauseCampaignAction(
+  campaignId: string,
+): Promise<CampaignStatusResult> {
+  const guard = await requirePlatformUser();
+  if (!guard.ok) return guard;
+
+  const supabase = await createClient();
+  const { data: campaign, error: readError } = await supabase
+    .from("creator_campaigns")
+    .select("prizeup_user_id, status")
+    .eq("id", campaignId)
+    .single();
+  if (readError || !campaign) return { ok: false, error: "Campaign not found" };
+  if (campaign.status === "deleted") {
+    return { ok: false, error: "Can't pause a deleted campaign" };
+  }
+
+  let frozen;
+  try {
+    frozen = await getRawReferralStats(campaign.prizeup_user_id);
+  } catch (err) {
+    console.error("pauseCampaignAction stats snapshot failed:", err instanceof Error ? err.message : err);
+    return { ok: false, error: "Couldn't reach PrizeUp's database right now — please try again in a moment." };
+  }
+
+  const { error } = await supabase
+    .from("creator_campaigns")
+    .update({ status: "paused", frozen_stats: frozen })
+    .eq("id", campaignId);
+  if (error) return { ok: false, error: error.message };
+
+  revalidateCampaigns();
+  return { ok: true };
+}
+
+// Resumes a paused campaign — numbers go live again. No-ops (with an error)
+// if the campaign isn't currently paused, doesn't exist, or isn't the
+// caller's own (RLS).
+export async function resumeCampaignAction(
+  campaignId: string,
+): Promise<CampaignStatusResult> {
+  const guard = await requirePlatformUser();
+  if (!guard.ok) return guard;
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("creator_campaigns")
+    .update({ status: "active", frozen_stats: null })
+    .eq("id", campaignId)
+    .eq("status", "paused")
+    .select("id");
+  if (error) return { ok: false, error: error.message };
+  if (!data || data.length === 0) {
+    return { ok: false, error: "Campaign not found, not yours, or not currently paused." };
+  }
+
+  revalidateCampaigns();
+  return { ok: true };
+}
+
+// Deletes (soft) a campaign: blocks the creator's /creator/[code] page
+// entirely from this point on. The row itself is kept for audit history
+// (who created it, when) rather than hard-deleted — and, same as pause,
+// PrizeUp's own referral redirect never checks this table, so it keeps
+// working regardless. Terminal: no "undelete" in the UI.
+export async function deleteCampaignAction(
+  campaignId: string,
+): Promise<CampaignStatusResult> {
+  const guard = await requirePlatformUser();
+  if (!guard.ok) return guard;
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("creator_campaigns")
+    .update({ status: "deleted" })
+    .eq("id", campaignId)
+    .neq("status", "deleted")
+    .select("id");
+  if (error) return { ok: false, error: error.message };
+  if (!data || data.length === 0) {
+    return { ok: false, error: "Campaign not found, not yours, or already deleted." };
+  }
+
+  revalidateCampaigns();
   return { ok: true };
 }

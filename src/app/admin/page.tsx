@@ -5,9 +5,11 @@ import { prizeupQuery } from "@/lib/prizeup/db";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { CopyButton } from "@/components/ui/copy-button";
+import { Badge } from "@/components/ui/badge";
 import { referralUrl, creatorStatsUrl } from "@/lib/urls";
 import { CreateCampaignForm } from "@/components/create-campaign-form";
 import { CampaignPercentageCell } from "@/components/campaign-percentage-cell";
+import { CampaignActions, type CampaignStatus } from "@/components/campaign-actions";
 
 type CampaignRow = {
   id: string;
@@ -16,6 +18,13 @@ type CampaignRow = {
   campaign_name: string | null;
   created_at: string;
   display_percentage: number;
+  status: CampaignStatus;
+};
+
+const STATUS_TONE: Record<CampaignStatus, "good" | "blue" | "critical"> = {
+  active: "good",
+  paused: "blue",
+  deleted: "critical",
 };
 type PrizeUpCreatorInfo = {
   id: string;
@@ -55,7 +64,7 @@ export default async function AdminHome() {
 
   const { data: campaignRows } = await supabase
     .from("creator_campaigns")
-    .select("id, prizeup_user_id, creator_email, campaign_name, created_at, display_percentage")
+    .select("id, prizeup_user_id, creator_email, campaign_name, created_at, display_percentage, status")
     .eq("admin_id", user!.id)
     .order("created_at", { ascending: false });
 
@@ -122,6 +131,19 @@ export default async function AdminHome() {
           "—"
         );
       },
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (r) => (
+        <Badge tone={STATUS_TONE[r.status]}>{r.status}</Badge>
+      ),
+    },
+    {
+      key: "actions",
+      header: "",
+      align: "right",
+      render: (r) => <CampaignActions campaignId={r.id} status={r.status} />,
     },
   ];
 
