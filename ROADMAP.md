@@ -13,7 +13,7 @@ valid).
 | **admin** | Create campaigns for creators, see their own campaigns' stats. Scoped to one app. |
 | ~~**creator**~~ | Not a platform role. A "creator" is just a real PrizeUp player account — they check their own stats at a public, email-gated link (`/creator/<code>`), no login. |
 
-## Decision log
+## Decision log 
 
 **Two Supabase projects, not one.** This dashboard's platform database
 (`platform_users`/`apps`) is separate from PrizeUp's own live production
