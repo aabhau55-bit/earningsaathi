@@ -27,7 +27,33 @@ function isPublic(pathname: string): boolean {
   );
 }
 
+// Canonical host. Everything human-facing lives on www; the bare apex is
+// folded into it HERE rather than by a Vercel domain-level "Redirect to
+// www" setting, because that setting also redirects
+// /.well-known/assetlinks.json — and Android's App Links verifier refuses
+// to follow redirects (Google's checker returns ERROR_CODE_REDIRECT). A
+// redirected assetlinks.json silently unverifies every earningsaathi.com
+// App Link, so invite links and the Google OAuth callback open Chrome
+// instead of the app. `config.matcher` below excludes any path containing a
+// dot, so assetlinks.json never reaches this function and is served from
+// public/ with a plain 200 on both hosts — which is what the verifier needs.
+//
+// NOTE: this is inert until the apex is switched from "Redirect" to a normal
+// domain in Vercel → Settings → Domains. Until then Vercel answers the apex
+// at the edge and no request gets this far.
+const APEX_HOST = "earningsaathi.com";
+const CANONICAL_HOST = "www.earningsaathi.com";
+
 export async function proxy(request: NextRequest) {
+  // Cheapest possible check, before the Supabase round-trip below.
+  if ((request.headers.get("host") ?? "").toLowerCase() === APEX_HOST) {
+    const url = request.nextUrl.clone();
+    url.protocol = "https:";
+    url.hostname = CANONICAL_HOST;
+    url.port = "";
+    return NextResponse.redirect(url, 308);
+  }
+
   const response = NextResponse.next({ request });
 
   const supabase = createServerClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {

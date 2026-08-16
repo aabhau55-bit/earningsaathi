@@ -25,9 +25,13 @@ const nextConfig: NextConfig = {
   // Mirrors vercel.json so `next dev` behaves the same as production. Root
   // "/" is the static marketing site (public/index.html) — the dashboard
   // lives at /dashboard, not at the domain root.
+  //
+  // "/auth" is exact, so the POST /auth/signout route handler below it is
+  // untouched — it only catches the bare OAuth redirect landing URL.
   async rewrites() {
     return [
       { source: "/", destination: "/index.html" },
+      { source: "/auth", destination: "/auth/index.html" },
       { source: "/prizeup/:code", destination: "/prizeup/index.html" },
       { source: "/i/:code", destination: "/i/index.html" },
     ];

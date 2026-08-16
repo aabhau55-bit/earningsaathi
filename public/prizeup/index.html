@@ -16,25 +16,43 @@
         color: #fff;
         text-align: center;
       }
-      .box { padding: 24px; }
+      .box { padding: 24px; max-width: 22rem; }
       .code { font-weight: 800; letter-spacing: 2px; color: #4ade80; }
       a { color: #4ade80; }
+      .btn {
+        display: inline-block;
+        margin-top: 20px;
+        padding: 12px 26px;
+        border-radius: 999px;
+        background: #4ade80;
+        color: #0a1410;
+        font-weight: 700;
+        text-decoration: none;
+      }
+      .hint { margin-top: 16px; font-size: 13px; color: #9ca3af; }
     </style>
   </head>
   <body>
     <div class="box">
       <h2>Opening PrizeUp…</h2>
       <p id="msg">Redirecting…</p>
+      <a id="open" class="btn" href="#">Open PrizeUp</a>
+      <p class="hint" id="hint"></p>
     </div>
     <!--
-      Served for /prizeup/<code> (and legacy /i/<code>) via the .htaccess rewrite
-      (the browser URL keeps the code, so we read it from the path here). Opens
-      the app if installed, else falls back to the Play Store carrying the code
-      so a new user still gets it auto-applied after install.
+      Served for /prizeup/<code> (and legacy /i/<code>) via the rewrite in
+      vercel.json + next.config.ts (the browser URL keeps the code, so we read
+      it from the path here). Opens the app if installed, else falls back to the
+      Play Store carrying the code so a new user still gets it auto-applied
+      after install.
     -->
     <script>
       (function () {
         var PACKAGE = 'com.earningsaathi.prizeup';
+        // Deliberately the bare apex, NOT location.hostname: this page is also
+        // served on www.earningsaathi.com, and the intent host has to match an
+        // `android.intentFilters` host in the app's app.json or Android has no
+        // activity to hand the intent to and drops straight to the fallback.
         var HOST = 'earningsaathi.com';
         var m = location.pathname.match(/\/(?:prizeup|i)\/([A-Za-z0-9]+)/i);
         var code = m ? m[1].toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 16) : '';
@@ -44,12 +62,34 @@
         var intent =
           'intent://' + HOST + '/prizeup/' + code + '#Intent;scheme=https;package=' + PACKAGE +
           ';S.browser_fallback_url=' + encodeURIComponent(play) + ';end';
+
         document.getElementById('msg').innerHTML = code
-          ? 'Invite code <span class="code">' + code +
-            '</span><br>If nothing happens, <a href="' + play + '">get the app on Google Play</a>.'
-          : '<a href="' + play + '">Get the app on Google Play</a>';
+          ? 'Invite code <span class="code">' + code + '</span>'
+          : 'Get PrizeUp to start earning.';
+        // A real tap is the most reliable launch: Chrome can refuse an
+        // automatic navigation to an external app without a user gesture.
+        document.getElementById('open').setAttribute('href', intent);
+        document.getElementById('hint').innerHTML =
+          "Don't have the app? <a href='" + play + "'>Get it on Google Play</a>.";
+
+        // The Play Store bounce below is ONLY for people without the app — it's
+        // the only way a fresh install learns the code (Play install referrer).
+        // If the intent above did launch the app, this tab goes to the
+        // background, and replacing it underneath would strand a returning user
+        // on a store listing instead of the invite they tapped — so any sign
+        // the page stopped being foregrounded cancels the bounce for good.
+        var bounce = true;
+        function cancel() { bounce = false; }
+        document.addEventListener('visibilitychange', function () {
+          if (document.hidden) cancel();
+        });
+        window.addEventListener('pagehide', cancel);
+        window.addEventListener('blur', cancel);
+
         try { window.location.replace(intent); } catch (e) {}
-        setTimeout(function () { window.location.replace(play); }, 1500);
+        setTimeout(function () {
+          if (bounce && !document.hidden) window.location.replace(play);
+        }, 2500);
       })();
     </script>
   </body>

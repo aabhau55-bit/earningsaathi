@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Signing you in…</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+        background: #0a1410;
+        color: #fff;
+        text-align: center;
+      }
+      .box { padding: 24px; max-width: 22rem; }
+      h2 { margin: 0 0 8px; font-size: 20px; }
+      p { margin: 0; line-height: 1.5; }
+      a { color: #4ade80; }
+      .btn {
+        display: inline-block;
+        margin-top: 20px;
+        padding: 12px 26px;
+        border-radius: 999px;
+        background: #4ade80;
+        color: #0a1410;
+        font-weight: 700;
+        text-decoration: none;
+      }
+      .hint { margin-top: 16px; font-size: 13px; color: #9ca3af; }
+    </style>
+  </head>
+  <body>
+    <div class="box">
+      <h2>Signing you in…</h2>
+      <p id="msg">Returning you to PrizeUp…</p>
+      <a id="open" class="btn" href="#">Open PrizeUp</a>
+      <p class="hint" id="hint"></p>
+    </div>
+    <!--
+      Browser fallback for the Google OAuth redirect. Supabase sends the user to
+      https://earningsaathi.com/auth?code=<pkce> after Google; normally the
+      verified App Link hands that straight to the app and this page never
+      renders. It renders when App Links verification isn't in effect — a fresh
+      install that hasn't been verified yet, a device where verification lapsed,
+      or an assetlinks.json outage (see the 2026-08-12 domain expiry) — and
+      without it that redirect is a hard 404 and sign-in dies with no recovery.
+
+      The `intent://` URL names the package explicitly, so Android launches the
+      app directly and skips App Link verification entirely. Same trick as
+      /i/index.html. The query string is forwarded untouched: googleAuth.ts's
+      openAuthSessionAsync listener reads `code` off the delivered URL and runs
+      exchangeCodeForSession, exactly as it would on the verified path.
+    -->
+    <script>
+      (function () {
+        var PACKAGE = 'com.earningsaathi.prizeup';
+        var HOST = 'earningsaathi.com';
+
+        // Forward ?code=… (or ?error=…) verbatim — the app is what completes
+        // the PKCE exchange. Never render the code: it's a live credential.
+        var query = location.search || '';
+        var play = 'https://play.google.com/store/apps/details?id=' + PACKAGE;
+        var intent =
+          'intent://' + HOST + '/auth' + query +
+          '#Intent;scheme=https;package=' + PACKAGE +
+          ';S.browser_fallback_url=' + encodeURIComponent(play) + ';end';
+
+        // A real tap is the most reliable launch: Chrome can refuse an
+        // automatic navigation to an external app without a user gesture.
+        document.getElementById('open').setAttribute('href', intent);
+
+        if (/[?&]error=/.test(query)) {
+          document.getElementById('msg').textContent =
+            'Google sign-in was cancelled or failed. Reopen PrizeUp and try again.';
+        }
+        document.getElementById('hint').textContent =
+          "If PrizeUp doesn't open on its own, tap the button above.";
+
+        // No timed Play Store bounce (unlike the invite pages): whoever lands
+        // here already has the app open behind this browser tab, and yanking
+        // them to the Play Store mid-sign-in would just lose the code.
+        try { window.location.replace(intent); } catch (e) {}
+      })();
+    </script>
+  </body>
+</html>
