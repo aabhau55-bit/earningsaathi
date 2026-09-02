@@ -18,8 +18,18 @@ import { ROLE_HOME, areaForPath, canAccessArea, type Role } from "@/lib/roles";
 // stats page — creators never have a login session either. /i and /prizeup
 // are the real referral-redirect links (App Links / Play Store fallback) —
 // the entire acquisition funnel depends on these being reachable by anyone,
-// logged in or not.
-const PUBLIC_PATHS = ["/", "/login", "/auth", "/creator", "/i", "/prizeup"];
+// logged in or not. /growbolt is the GrowBolt offerwall page the PrizeUp app
+// opens in a Custom Tab — its visitors are PrizeUp users, who never have a
+// platform login, so gating it would bounce every one of them to /login.
+const PUBLIC_PATHS = [
+  "/",
+  "/login",
+  "/auth",
+  "/creator",
+  "/i",
+  "/prizeup",
+  "/growbolt",
+];
 
 function isPublic(pathname: string): boolean {
   return PUBLIC_PATHS.some(
