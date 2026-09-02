@@ -89,8 +89,6 @@ box-shadow: 0 18px 50px -18px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0
 | 5 | **Small duplication, not a UX bug but worth a pass:** the `num()` formatter (`Number(n ?? 0).toLocaleString()`) is copy-pasted in 5 files instead of one shared util; the 12-char password generator is copy-pasted in 2 forms; the brand gradient string is hardcoded independently in ~4 places (`button.tsx`, `sidebar.tsx`, `app-shell.tsx`, `styles.css`) instead of one token. | `src/app/admin/page.tsx:31`, `src/app/creator/page.tsx:18`, `src/app/super/page.tsx:39`, `src/app/super/admins/[id]/page.tsx:19`, `src/components/campaign-detail.tsx:19` | No visible effect today; makes future changes (e.g. "change the brand gradient angle") more error-prone since there's no single place to edit. |
 | 6 | **Dark-only, by design.** Neither property has a light mode — confirmed intentional (`globals.css:5-6` literally says "the marketing site has no light mode, so neither does this"). Not a flaw, but worth flagging: an admin using the dashboard outdoors or in a bright office has no alternative. | — | Deliberate brand-consistency tradeoff — flagging for awareness, not recommending a change. |
 
----
-
 ## 4. Dashboard — full feature list (built)
 
 ### Auth & session
