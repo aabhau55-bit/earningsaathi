@@ -89,7 +89,6 @@ and the Play-managed key to be safe:
   "11:22:33:…   (Play App Signing key)"
 ]
 ```
-
 Re-upload `assetlinks.json` after editing. Android re-verifies App Links on install;
 you can force a re-check on a device with:
 
