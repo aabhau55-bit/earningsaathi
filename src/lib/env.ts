@@ -48,6 +48,17 @@ export function getPrizeUpUrl(): string {
   return required("PRIZEUP_SUPABASE_URL", process.env.PRIZEUP_SUPABASE_URL);
 }
 
+// Authenticates us to PrizeUp's `push-send` Edge Function. That endpoint can
+// message every user of the app, so the secret is server-only and must never
+// reach a "use client" module — the compose form calls a Server Action, which
+// is what actually holds this.
+export function getPushSendSecret(): string {
+  return required(
+    "PRIZEUP_PUSH_SEND_SECRET",
+    process.env.PRIZEUP_PUSH_SEND_SECRET,
+  );
+}
+
 // Needed to create real PrizeUp accounts (auth.admin.createUser) — the
 // supported way, instead of writing to auth.users directly over SQL.
 export function getPrizeUpServiceRoleKey(): string {

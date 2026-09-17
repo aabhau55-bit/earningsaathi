@@ -10,6 +10,7 @@ export function navForRole(role: Role): NavItem[] {
       return [
         { label: "Overview", href: "/super", icon: "dashboard" },
         { label: "Economy", href: "/super/economy", icon: "chart" },
+        { label: "Notifications", href: "/super/notifications", icon: "bell" },
         { label: "Users", href: "/super/users", icon: "users" },
         { label: "Withdrawals", href: "/super/withdrawals", icon: "wallet" },
         { label: "Admins", href: "/super/admins", icon: "shield" },
