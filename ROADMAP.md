@@ -67,7 +67,7 @@ what they labeled it) — never the referral data itself.
 
 ---
 
-## If/when you want withdrawal actions + balance adjustment built
+## If/when you want withdrawal actions + balance adjustment built then
 
 That's genuinely new work, not yet started:
 - `approve_withdrawal` / `reject_withdrawal` — needs a decision on manual (mark sent + paste code, matching the existing runbook) vs. automated payout (calling an actual gift-card/UPI provider API — a vendor integration, not just code)
