@@ -65,29 +65,37 @@ export async function proxy(request: NextRequest) {
 
   const response = NextResponse.next({ request });
 
-  // Read env vars here (not via module-level import of env.ts) so a missing
-  // var is a visible runtime 500, not a silent cold-start crash that returns
-  // 404 for every matched route.
-  const supabaseUrl =
-    process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   const supabaseKey =
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
     "";
 
+  if (!supabaseUrl || !supabaseKey) {
+    return response;
+  }
+
+  try {
+    return await gate(request, response, supabaseUrl, supabaseKey);
+  } catch {
+    return response;
+  }
+}
+
+async function gate(
+  request: NextRequest,
+  response: NextResponse,
+  supabaseUrl: string,
+  supabaseKey: string,
+) {
   const supabase = createServerClient(supabaseUrl, supabaseKey, {
     cookies: {
       getAll() {
         return request.cookies.getAll();
       },
-      setAll(cookiesToSet, headers) {
+      setAll(cookiesToSet) {
         for (const { name, value, options } of cookiesToSet) {
           response.cookies.set(name, value, options);
-        }
-        if (headers) {
-          for (const [key, value] of Object.entries(headers)) {
-            response.headers.set(key, value);
-          }
         }
       },
     },
@@ -99,7 +107,6 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Signed out: allow only public paths; otherwise send to /login.
   if (!user) {
     if (isPublic(pathname)) return response;
     const url = request.nextUrl.clone();
@@ -107,7 +114,6 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Signed in: resolve role (RLS lets a user read their own row).
   const { data: profile } = await supabase
     .from("platform_users")
     .select("role")
@@ -116,7 +122,6 @@ export async function proxy(request: NextRequest) {
 
   const role = profile?.role as Role | undefined;
 
-  // No platform_users row yet (trigger should have created it) — sign out safe.
   if (!role) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
@@ -126,8 +131,6 @@ export async function proxy(request: NextRequest) {
 
   const home = ROLE_HOME[role];
 
-  // A signed-in user hitting /login goes to their area. "/" is the public
-  // marketing site — signed-in users see it like anyone else, no redirect.
   if (pathname === "/login") {
     const url = request.nextUrl.clone();
     url.pathname = home;
@@ -135,7 +138,6 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Enforce single-area access.
   const area = areaForPath(pathname);
   if (area && !canAccessArea(role, area)) {
     const url = request.nextUrl.clone();
