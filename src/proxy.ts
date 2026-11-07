@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "@/lib/env";
 import { ROLE_HOME, areaForPath, canAccessArea, type Role } from "@/lib/roles";
 
 // Next.js 16: this file replaces `middleware.ts`. It runs before every matched
@@ -65,6 +64,11 @@ export async function proxy(request: NextRequest) {
   }
 
   const response = NextResponse.next({ request });
+
+  // Imported here (not at module level) so a missing env var throws a visible
+  // 500 at request time rather than silently killing the edge function on cold
+  // start and causing a 404 for every matched route.
+  const { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } = await import("@/lib/env");
 
   const supabase = createServerClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     cookies: {
