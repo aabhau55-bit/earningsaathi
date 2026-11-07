@@ -65,12 +65,17 @@ export async function proxy(request: NextRequest) {
 
   const response = NextResponse.next({ request });
 
-  // Imported here (not at module level) so a missing env var throws a visible
-  // 500 at request time rather than silently killing the edge function on cold
-  // start and causing a 404 for every matched route.
-  const { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } = await import("@/lib/env");
+  // Read env vars here (not via module-level import of env.ts) so a missing
+  // var is a visible runtime 500, not a silent cold-start crash that returns
+  // 404 for every matched route.
+  const supabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const supabaseKey =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+    "";
 
-  const supabase = createServerClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  const supabase = createServerClient(supabaseUrl, supabaseKey, {
     cookies: {
       getAll() {
         return request.cookies.getAll();
