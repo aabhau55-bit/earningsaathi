@@ -13,7 +13,7 @@ website/
   terms.html                      ← Terms of Service
   i/index.html                    ← referral redirect; serves all /i/<code> links
   .htaccess                       ← rewrites /i/<code> → i/index.html + serves assetlinks as JSON
-  .well-known/assetlinks.json     ← verifies Android App Links (needs your SHA-256)
+  .well-known/assetlinks.json     ← verifies Android App Links (needs your SHA-256) here
 ```
 
 The site is a single **product showcase** landing page plus the legal/referral files the
