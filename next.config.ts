@@ -1,11 +1,9 @@
 import type { NextConfig } from "next";
 
-// `unsafe-inline`/`unsafe-eval` are weaker than ideal — a nonce-based CSP
-// would be stricter — but the marketing site (public/*.html) has inline
-// <script> tags (scroll-reveal, footer year) and Next's dev overlay needs
-// `unsafe-eval`, so this is the safe middle ground without reworking either.
-// `https://*.supabase.co` in connect-src is for the browser's own Supabase
-// Auth calls (login) — PrizeUp's project is only ever reached server-side.
+// `unsafe-inline` is needed because the static app-link pages (auth, prizeup,
+// i) still have inline scripts, and Next's dev overlay needs `unsafe-eval`.
+// `https://*.supabase.co` in connect-src is for the browser's Supabase Auth
+// calls (login) — PrizeUp's project is only ever reached server-side.
 function contentSecurityPolicy(isDev: boolean): string {
   return [
     "default-src 'self'",
@@ -51,15 +49,12 @@ function growboltContentSecurityPolicy(isDev: boolean): string {
 }
 
 const nextConfig: NextConfig = {
-  // Mirrors vercel.json so `next dev` behaves the same as production. Root
-  // "/" is the static marketing site (public/index.html) — the dashboard
-  // lives at /dashboard, not at the domain root.
-  //
-  // "/auth" is exact, so the POST /auth/signout route handler below it is
-  // untouched — it only catches the bare OAuth redirect landing URL.
+  // "/auth" is exact, so the POST /auth/signout route handler is untouched —
+  // it only catches the bare OAuth redirect landing URL. /prizeup and /i are
+  // app-link redirect pages that use Android intents and must stay as static
+  // HTML (no SSR).
   async rewrites() {
     return [
-      { source: "/", destination: "/index.html" },
       { source: "/auth", destination: "/auth/index.html" },
       { source: "/prizeup/:code", destination: "/prizeup/index.html" },
       { source: "/i/:code", destination: "/i/index.html" },

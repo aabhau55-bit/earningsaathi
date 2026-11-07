@@ -11,15 +11,9 @@ import { ROLE_HOME, areaForPath, canAccessArea, type Role } from "@/lib/roles";
 //
 // NO role switching: a role can only ever land in its single ROLE_HOME.
 
-// "/" is the static marketing site (public/index.html, rewritten in via
-// vercel.json/next.config.ts) — it must never be forced through the login
-// redirect, signed in or not. /creator/<code> is a public, email-gated
-// stats page — creators never have a login session either. /i and /prizeup
-// are the real referral-redirect links (App Links / Play Store fallback) —
-// the entire acquisition funnel depends on these being reachable by anyone,
-// logged in or not. /growbolt is the GrowBolt offerwall page the PrizeUp app
-// opens in a Custom Tab — its visitors are PrizeUp users, who never have a
-// platform login, so gating it would bounce every one of them to /login.
+// Public paths: the marketing site (/), legal pages, login, app-link redirects
+// (/i, /prizeup, /auth), the GrowBolt offerwall, and creator stats pages.
+// None of these require a platform login.
 const PUBLIC_PATHS = [
   "/",
   "/login",
@@ -28,6 +22,10 @@ const PUBLIC_PATHS = [
   "/i",
   "/prizeup",
   "/growbolt",
+  "/privacy-policy",
+  "/terms",
+  "/how-to-delete",
+  "/blog",
 ];
 
 function isPublic(pathname: string): boolean {

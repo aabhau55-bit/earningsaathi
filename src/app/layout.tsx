@@ -9,10 +9,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Earning Saathi Dashboard",
-  description: "Admin control panel for the Earning Saathi PrizeUp app.",
+  title: {
+    default: "Earning Saathi | PrizeUp - Free Reward App",
+    template: "%s | Earning Saathi",
+  },
+  description: "Earning Saathi builds free, rewarding mobile apps. PrizeUp lets you play games, earn coins and redeem gift cards.",
+  metadataBase: new URL("https://earningsaathi.com"),
   icons: {
-    icon: "/favicon.ico",
+    icon: "/favicon.png",
+    apple: "/favicon.png",
   },
 };
 
